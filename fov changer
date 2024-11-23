@@ -1,0 +1,165 @@
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local camera = workspace.CurrentCamera
+local player = Players.LocalPlayer
+local playerImage = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
+
+-- Create the main menu GUI, initially hidden
+local fovMenu = Instance.new("ScreenGui")
+fovMenu.Name = "FOVConfigMenu"
+fovMenu.ResetOnSpawn = false
+fovMenu.Enabled = true  -- Menu is now enabled immediately
+fovMenu.Parent = game.CoreGui
+
+local frame = Instance.new("Frame", fovMenu)
+frame.Size = UDim2.new(0, 300, 0, 230)
+frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Visible = true  -- Ensure the menu is visible from the start
+frame.Active = true
+
+local frameCorner = Instance.new("UICorner", frame)
+frameCorner.CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "FOV Config"
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextStrokeTransparency = 0.5
+
+local slider = Instance.new("Frame", frame)
+slider.Size = UDim2.new(1, -20, 0, 20)
+slider.Position = UDim2.new(0, 10, 0, 50)
+slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+slider.BorderSizePixel = 0
+
+local sliderCorner = Instance.new("UICorner", slider)
+sliderCorner.CornerRadius = UDim.new(0, 5)
+
+local sliderBar = Instance.new("Frame", slider)
+sliderBar.Size = UDim2.new(0.5, 0, 1, 0)
+sliderBar.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+sliderBar.BorderSizePixel = 0
+
+local sliderBarCorner = Instance.new("UICorner", sliderBar)
+sliderBarCorner.CornerRadius = UDim.new(0, 5)
+
+local madeBy = Instance.new("TextLabel", frame)
+madeBy.Size = UDim2.new(1, 0, 0, 20)
+madeBy.Position = UDim2.new(0, 0, 0, 90)
+madeBy.BackgroundTransparency = 1
+madeBy.Text = "Made By Flare"
+madeBy.Font = Enum.Font.SourceSansBold
+madeBy.TextSize = 16
+madeBy.TextColor3 = Color3.fromRGB(255, 255, 255)
+madeBy.TextStrokeTransparency = 0.5
+
+local discordLink = Instance.new("TextLabel", frame)
+discordLink.Size = UDim2.new(1, 0, 0, 20)
+discordLink.Position = UDim2.new(0, 0, 0, 115)
+discordLink.BackgroundTransparency = 1
+discordLink.Text = "https://discord.gg/gqT98aNPsQ"
+discordLink.Font = Enum.Font.SourceSansBold
+discordLink.TextSize = 14
+discordLink.TextColor3 = Color3.fromRGB(100, 200, 255)
+discordLink.TextStrokeTransparency = 0.5
+
+-- Profile Picture Circle inside the menu at the top-right corner
+local profilePicFrame = Instance.new("Frame", frame)
+profilePicFrame.Size = UDim2.new(0, 40, 0, 40)
+profilePicFrame.Position = UDim2.new(1, -50, 0, 10)
+profilePicFrame.BackgroundTransparency = 0
+profilePicFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+profilePicFrame.BorderSizePixel = 0
+profilePicFrame.ClipsDescendants = true
+
+local profilePic = Instance.new("ImageLabel", profilePicFrame)
+profilePic.Size = UDim2.new(1, 0, 1, 0)
+profilePic.BackgroundTransparency = 1
+profilePic.Image = playerImage
+profilePic.ScaleType = Enum.ScaleType.Crop
+
+local profilePicCorner = Instance.new("UICorner", profilePicFrame)
+profilePicCorner.CornerRadius = UDim.new(0, 20)
+
+-- "Un Execute" Button to disable the menu
+local unExecuteButton = Instance.new("TextButton", frame)
+unExecuteButton.Size = UDim2.new(1, 0, 0, 30)
+unExecuteButton.Position = UDim2.new(0, 0, 0, 160)
+unExecuteButton.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+unExecuteButton.Text = "Un Execute"
+unExecuteButton.Font = Enum.Font.SourceSansBold
+unExecuteButton.TextSize = 18
+unExecuteButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+unExecuteButton.TextStrokeTransparency = 0.5
+
+-- Disable the menu functionality
+local function unExecuteScript()
+    -- Disable the menu and remove functionality
+    fovMenu.Enabled = false  -- Disables the entire menu GUI
+    -- Optionally, reset the FOV to default (uncomment if needed):
+    -- camera.FieldOfView = 70
+
+    -- Disconnect the RightShift key functionality to prevent reopening
+    fovMenu:ClearAllChildren()  -- Clear all UI elements
+
+    -- Disable user input to prevent menu interaction
+    UserInputService.InputBegan:Disconnect()
+    RunService.RenderStepped:Disconnect()
+end
+
+unExecuteButton.MouseButton1Click:Connect(unExecuteScript)
+
+local isSliding = false
+local isDraggingFrame = false
+local dragStart, dragOffset
+
+local function updateFOV(mouseX)
+    local relativeX = math.clamp(mouseX - slider.AbsolutePosition.X, 0, slider.AbsoluteSize.X)
+    local fov = 70 + (relativeX / slider.AbsoluteSize.X) * 50
+    sliderBar.Size = UDim2.new(relativeX / slider.AbsoluteSize.X, 0, 1, 0)
+    camera.FieldOfView = fov
+end
+
+slider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSliding = true
+        updateFOV(UserInputService:GetMouseLocation().X)
+    end
+end)
+
+slider.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isSliding = false
+    end
+end)
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and not isSliding then
+        isDraggingFrame = true
+        dragStart = UserInputService:GetMouseLocation()
+        dragOffset = frame.Position - UDim2.new(0, dragStart.X, 0, dragStart.Y)
+    end
+end)
+
+frame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDraggingFrame = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if isSliding then
+        updateFOV(UserInputService:GetMouseLocation().X)
+    elseif isDraggingFrame then
+        local mousePosition = UserInputService:GetMouseLocation()
+        frame.Position = UDim2.new(0, mousePosition.X, 0, mousePosition.Y) + dragOffset
+    end
+end)
